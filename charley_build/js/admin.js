@@ -19,8 +19,8 @@ const toIso = (ymd, hhmm) => new Date(`${ymd}T${hhmm}:00-03:00`).toISOString();
 
 function modal(html) {
   const d = document.createElement('dialog'); d.className = 'dlg big';
-  d.innerHTML = html; document.body.appendChild(d);
-  d.addEventListener('close', () => d.remove()); d.showModal();
+  d.innerHTML = `<button type="button" class="dlg-x" aria-label="Fechar janela" title="Fechar">×</button>${html}`; document.body.appendChild(d);
+  d.addEventListener('close', () => d.remove()); d.querySelector('.dlg-x').addEventListener('click', () => d.close()); d.showModal();
   $$('[data-close]', d).forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); d.close(); }));
   return d;
 }
