@@ -54,6 +54,7 @@ async function init() {
 }
 
 function shell() {
+  document.body.classList.add('admin-motion');
   root.innerHTML = `<div class="adm-bar"><b style="color:var(--orange)">Painel do Charley</b>
     <div class="row"><a class="btn small ghost" href="index.html" target="_blank">Ver site</a><a class="btn small ghost" href="conta.html">Minha conta</a><button class="btn small ghost" id="out">Sair</button></div></div>
     <nav class="adm-tabs" id="tabs"></nav><div class="adm-wrap" id="view"></div>`;
