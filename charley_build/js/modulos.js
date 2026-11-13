@@ -131,7 +131,7 @@ export async function viewCampanhas(root){
      const removed=[...existing].filter(cid=>!chosen.includes(cid));
      try{
       if(added.length)await api.insert('campaign_recipients',added.map(customer_id=>({campaign_id:id,customer_id,status:'prepared'})));
-      for(const cid of removed){const row=rs.find(x=>x.customer_id===cid);if(row&&!['sent_manual','responded'].includes(row.status))await api.delete('campaign_recipients','id=eq.'+row.id)}
+      for(const cid of removed){const row=rs.find(x=>x.customer_id===cid);if(row&&!['sent_manual','responded'].includes(row.status))await api.remove('campaign_recipients','id=eq.'+row.id)}
       await refresh();box.hidden=true;toast('Seleção de público salva.','success');
      }catch(e){toast(e.message,'error')}
     };
