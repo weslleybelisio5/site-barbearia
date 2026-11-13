@@ -171,6 +171,13 @@ dialog.big{max-width:min(94vw,560px);width:100%;max-height:92vh;overflow:auto}
 @media(min-width:700px){.help-hero-grid{grid-template-columns:1.15fr .85fr}.help-orbit{height:340px}.help-grid{grid-template-columns:repeat(2,1fr)}.tutorial-layout{grid-template-columns:1.1fr .9fr}.tutorial-layout.reverse>div:first-child{order:2}.tutorial-layout.reverse>div:last-child{order:1}}
 @media(max-width:560px){.hero .wrap{min-height:auto;padding-top:40px;padding-bottom:30px}.hero-stage{min-height:250px}.hero-logo{width:min(64vw,250px)}.hero-chip{right:2%;bottom:4%;font-size:.55rem}.help-teaser-inner{align-items:flex-start;flex-direction:column}.help-teaser .btn{width:100%}.help-card{min-height:160px}.tutorial-visual{min-height:270px}.charley-help{right:12px;bottom:12px}.assistant-launch{padding:11px 14px}.assistant-launch span:last-child{font-size:.85rem}}
 @media(prefers-reduced-motion:reduce){.hero-object,.orbit-chair{animation:none!important}.reveal{opacity:1;transform:none;transition:none}.help-card,.assistant-panel{transition:none;animation:none}}
+/* Fechamento consistente dos formulários e posição do suporte longe do selo Netlify */
+dialog.big{position:relative;padding:30px 22px 22px}
+.dlg-x{position:absolute;top:9px;right:10px;z-index:3;width:36px;height:36px;border:1px solid var(--line);border-radius:50%;background:#252525;color:#fff;font-size:1.45rem;line-height:1;cursor:pointer;display:grid;place-items:center}
+.dlg-x:hover{background:var(--orange);color:#111;border-color:var(--orange)}
+.charley-help{left:16px;right:auto;bottom:88px;justify-items:start}
+@media(max-width:560px){.charley-help{left:12px;right:auto;bottom:88px}}
+
 /* --- CORREÇÕES ADICIONAIS (Adicione isso no final do seu arquivo) --- */
 
 /* Forçar 3 colunas nos horários */
