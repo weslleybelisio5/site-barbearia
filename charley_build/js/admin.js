@@ -8,8 +8,8 @@ registerSW();
 const root = $('#adm');
 const STATUS = { pending: ['Aguardando', 'warn'], confirmed: ['Confirmado', 'ok'], completed: ['Concluído', 'ok'], cancelled: ['Cancelado', 'bad'], no_show: ['Faltou', 'bad'] };
 const METHODS = { pix: 'Pix', cash: 'Dinheiro', debit: 'Débito', credit: 'Crédito', other: 'Outro' };
-const TABS = [['agenda', 'Agenda'], ['clientes', 'Clientes'], ['servicos', 'Serviços'], ['caixa','Caixa'], ['vendas','Vendas'], ['produtos','Estoque'], ['kits','Kits'], ['despesas','Despesas'], ['cupons','Cupons'], ['planos','Planos'], ['assinaturas','Assinaturas'], ['lista-espera','Lista de espera'], ['galeria','Galeria'], ['conteudo','Avisos do site'], ['faq','FAQ'], ['avaliacoes','Avaliações'], ['tarefas','Tarefas'], ['metas','Metas'], ['campanhas','Campanhas'], ['privacidade','LGPD'], ['relatorios','Relatórios'], ['horarios', 'Horários'], ['avisos', 'Notificações']];
-const S = { date: todayRecife(), view: 'day', tab: 'agenda', services: [] };
+const TABS = [['resumo', 'Visão geral'], ['agenda', 'Agenda'], ['clientes', 'Clientes'], ['servicos', 'Serviços'], ['caixa','Caixa'], ['vendas','Vendas'], ['produtos','Estoque'], ['kits','Kits'], ['despesas','Despesas'], ['cupons','Cupons'], ['planos','Planos'], ['assinaturas','Assinaturas'], ['lista-espera','Lista de espera'], ['galeria','Galeria'], ['conteudo','Avisos do site'], ['faq','FAQ'], ['avaliacoes','Avaliações'], ['tarefas','Tarefas'], ['metas','Metas'], ['campanhas','Campanhas'], ['privacidade','LGPD'], ['relatorios','Relatórios'], ['horarios', 'Horários'], ['avisos', 'Notificações']];
+const S = { date: todayRecife(), view: 'day', tab: 'resumo', services: [] };
 const field = (id, label, attrs = '') => `<label for="${id}">${label}</label><input id="${id}" ${attrs}>`;
 const dayStart = (ymd) => new Date(ymd + 'T00:00:00-03:00').toISOString();
 const ymdOf = (iso) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Recife' }).format(new Date(iso));
@@ -27,19 +27,30 @@ function modal(html) {
 const guard = async (fn) => { try { return await fn(); } catch (e) { toast(e.message, 'error'); return null; } };
 
 async function init() {
-  const me = api.session() ? await currentProfile() : null;
-  if (!me || me.role !== 'admin') {
-    root.innerHTML = `<div class="adm-wrap"><div class="card" style="max-width:480px"><h1>Painel do Charley</h1>
-      <p>${me ? 'Esta conta não tem acesso ao painel.' : 'Entre com a conta do administrador para continuar.'}</p>
-      <a class="btn" href="conta.html">${me ? 'Voltar à minha conta' : 'Entrar'}</a></div></div>`;
-  } else {
-    // Mostra o painel assim que a permissão é confirmada; serviços são
-    // carregados sob demanda ao abrir telas que realmente precisam deles.
-    shell();
-    route();
-    window.addEventListener('hashchange', route);
+  root.innerHTML = '<div class="adm-wrap"><div class="card"><p class="loading"><span class="spin"></span>Verificando acesso…</p></div></div>';
+  try {
+    const me = api.session() ? await currentProfile() : null;
+    if (!me || String(me.role || '').toLowerCase() !== 'admin') {
+      const diagnostic = api.lastProfileDiagnostic();
+      root.innerHTML = `<div class="adm-wrap"><div class="card" style="max-width:560px"><h1>Painel do Charley</h1>
+        <p>${me ? 'Esta conta não tem acesso ao painel.' : api.session() ? 'Não foi possível confirmar seu perfil administrativo.' : 'Entre com a conta do administrador para continuar.'}</p>
+        ${diagnostic ? `<div class="notice error" role="alert">${esc(diagnostic)}</div>` : ''}
+        <div class="row"><a class="btn" href="conta.html">${me ? 'Voltar à minha conta' : 'Entrar'}</a>
+        <button class="btn ghost" id="diag" type="button">Diagnosticar conexão</button></div>
+        <pre id="diag-result" class="mini" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></div></div>`;
+      $('#diag')?.addEventListener('click', async () => {
+        const out = $('#diag-result'); out.textContent = 'Verificando tabelas e permissões…';
+        try { const report = await api.diagnose(); out.textContent = JSON.stringify(report, null, 2); }
+        catch (error) { out.textContent = error.message; }
+      });
+    } else {
+      shell();
+      route();
+      window.addEventListener('hashchange', route);
+    }
+  } catch (error) {
+    root.innerHTML = `<div class="adm-wrap"><div class="card"><h1>Painel do Charley</h1><div class="notice error">${esc(error.message || 'Falha ao iniciar o painel.')}</div><a class="btn" href="conta.html">Voltar</a></div></div>`;
   }
-
 }
 
 function shell() {
@@ -51,14 +62,41 @@ function shell() {
 let routeVersion = 0;
 function route() {
   const version = ++routeVersion;
-  S.tab = (location.hash.replace('#', '') || 'agenda');
-  if (!TABS.some(([k]) => k === S.tab)) S.tab = 'agenda';
+  S.tab = (location.hash.replace('#', '') || 'resumo');
+  if (!TABS.some(([k]) => k === S.tab)) S.tab = 'resumo';
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<a href="#${k}" ${k === S.tab ? 'aria-current="page"' : ''}>${l}</a>`).join('');
-  const actions = { agenda: viewAgenda, clientes: viewClientes, servicos: viewServicos, horarios: viewHorarios, avisos: viewAvisos, caixa:()=>viewCaixa(view()), vendas:()=>viewVendas(view()), produtos:()=>viewProdutos(view()), kits:()=>viewKits(view()), despesas:()=>viewDespesas(view()), cupons:()=>viewCupons(view()), privacidade:()=>viewPrivacidade(view()), planos:()=>viewPlanos(view()), assinaturas:()=>viewAssinaturas(view()), 'lista-espera':()=>viewListaEspera(view()), galeria:()=>viewConteudo(view(),'gallery_items','Galeria'), conteudo:()=>viewConteudo(view(),'announcements','Avisos do site'), faq:()=>viewConteudo(view(),'faq_items','Perguntas frequentes'), avaliacoes:()=>viewAvaliacoes(view()), tarefas:()=>viewTarefas(view()), metas:()=>viewMetas(view()), campanhas:()=>viewCampanhas(view()), relatorios:()=>viewRelatorios(view()) }[S.tab];
+  const actions = { resumo: viewOverview, agenda: viewAgenda, clientes: viewClientes, servicos: viewServicos, horarios: viewHorarios, avisos: viewAvisos, caixa:()=>viewCaixa(view()), vendas:()=>viewVendas(view()), produtos:()=>viewProdutos(view()), kits:()=>viewKits(view()), despesas:()=>viewDespesas(view()), cupons:()=>viewCupons(view()), privacidade:()=>viewPrivacidade(view()), planos:()=>viewPlanos(view()), assinaturas:()=>viewAssinaturas(view()), 'lista-espera':()=>viewListaEspera(view()), galeria:()=>viewConteudo(view(),'gallery_items','Galeria'), conteudo:()=>viewConteudo(view(),'announcements','Avisos do site'), faq:()=>viewConteudo(view(),'faq_items','Perguntas frequentes'), avaliacoes:()=>viewAvaliacoes(view()), tarefas:()=>viewTarefas(view()), metas:()=>viewMetas(view()), campanhas:()=>viewCampanhas(view()), relatorios:()=>viewRelatorios(view()) }[S.tab];
   const target = view(); target.innerHTML = '<p class="loading"><span class="spin"></span>Carregando módulo…</p>';
   Promise.resolve().then(actions).catch(e => { if(version===routeVersion) target.innerHTML = `<div class="notice error">${esc(e.message||'Não foi possível carregar este módulo.')}</div>`; });
 }
 const view = () => $('#view');
+
+// Visão geral: consolidado mensal e próximos horários, sem gravar dados.
+async function viewOverview() {
+  const target = view();
+  const today = todayRecife();
+  const first = today.slice(0, 8) + '01';
+  const [report, appointments, cash] = await Promise.all([
+    api.rpc('report_summary', { p_from: first, p_to: today }),
+    loadAppts(today, addDays(today, 7)),
+    api.rpc('cash_summary').catch(() => null),
+  ]);
+  const upcoming = appointments.filter(a => ['pending', 'confirmed'].includes(a.status)).slice(0, 6);
+  const m = report.appointments || {};
+  target.innerHTML = `<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><div><h2>Visão geral</h2><p class="muted">Resumo de ${fmtDate(first + 'T12:00:00')} até ${fmtDate(today + 'T12:00:00')}</p></div><button class="btn" id="new-from-home">+ Novo agendamento</button></div>
+    <div class="stats"><div class="stat">Faturamento do mês<b>${brl(report.revenue || 0)}</b></div><div class="stat">Despesas pagas<b>${brl(report.expenses || 0)}</b></div><div class="stat">Resultado<b>${brl(report.profit || 0)}</b></div><div class="stat">Ticket médio<b>${brl(report.avg_ticket || 0)}</b></div><div class="stat">Atendimentos concluídos<b>${m.completed || 0}</b></div><div class="stat">Novos clientes<b>${report.new_customers || 0}</b></div></div>
+    <div class="grid" style="margin-top:16px"><section class="card"><div class="row" style="justify-content:space-between"><h3>Caixa</h3><span class="badge">${cash?.status === 'open' ? 'Aberto' : 'Fechado'}</span></div>${cash?.status === 'open' ? `<p>Saldo inicial: <b>${brl(cash.opening_amount || 0)}</b></p><p>Dinheiro esperado: <b>${brl(cash.expected_cash || 0)}</b></p><p class="muted">Confira recebimentos e movimentações no módulo Caixa.</p>` : '<p class="muted">Não há caixa aberto no momento.</p>'}<button class="btn small ghost" id="open-cash">Abrir módulo Caixa</button></section>
+    <section class="card"><div class="row" style="justify-content:space-between"><h3>Próximos horários</h3><button class="btn small ghost" id="open-agenda">Ver agenda</button></div>${upcoming.length ? upcoming.map(a => `<div class="svc"><div><b>${esc(a.guest_name || 'Cliente')}</b><br><span class="muted">${fmtDate(a.start_at)} · ${fmtTime(a.start_at)} · ${(a.appointment_items || []).map(i => esc(i.service_name)).join(' + ')}</span></div><span class="badge">${STATUS[a.status]?.[0] || esc(a.status)}</span></div>`).join('') : '<p class="muted">Nenhum horário pendente ou confirmado nos próximos 7 dias.</p>'}</section></div>
+    <section class="card" style="margin-top:16px"><h3>Acessos rápidos</h3><div class="row"><button class="btn small ghost" id="quick-clients">Clientes</button><button class="btn small ghost" id="quick-sales">Vendas</button><button class="btn small ghost" id="quick-plans">Planos e assinaturas</button><button class="btn small ghost" id="quick-wait">Lista de espera</button><button class="btn small ghost" id="quick-reports">Relatórios</button></div></section>`;
+  $('#new-from-home').onclick = () => newAppointment();
+  $('#open-cash').onclick = () => { location.hash = '#caixa'; };
+  $('#open-agenda').onclick = () => { location.hash = '#agenda'; };
+  $('#quick-clients').onclick = () => { location.hash = '#clientes'; };
+  $('#quick-sales').onclick = () => { location.hash = '#vendas'; };
+  $('#quick-plans').onclick = () => { location.hash = '#assinaturas'; };
+  $('#quick-wait').onclick = () => { location.hash = '#lista-espera'; };
+  $('#quick-reports').onclick = () => { location.hash = '#relatorios'; };
+}
 
 // ====================== AGENDA ======================
 async function viewAgenda() {
@@ -183,7 +221,7 @@ async function newAppointment(pre = {}) {
     try {
       await api.rpc('admin_create_appointment', { p_service_ids: ids, p_start: toIso($('#nd', d).value, $('#nt', d).value), p_name: $('#nm', d).value.trim() || null, p_whatsapp: onlyDigits($('#wa', d).value) || null,
         p_customer_id: d.dataset.cust || null, p_notes: $('#nn', d).value.trim() || null });
-      d.close(); toast('Agendamento criado.', 'success'); S.date = $('#nd', d).value; if (S.tab === 'agenda') viewAgenda();
+      d.close(); toast('Agendamento criado.', 'success'); S.date = $('#nd', d).value; if (S.tab === 'agenda') viewAgenda(); else if (S.tab === 'resumo') viewOverview();
     } catch (ex) { $('#e', d).textContent = ex.message; }
   };
 }

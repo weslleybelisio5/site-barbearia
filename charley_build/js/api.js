@@ -19,16 +19,35 @@ function friendly(msg, status) {
   return m || 'Não foi possível concluir. Tente novamente.';
 }
 
+let refreshPromise = null;
 async function refreshIfNeeded() {
-  const s = loadSession();
-  if (!s) return null;
-  if (s.expires_at && s.expires_at - 60 > Math.floor(Date.now() / 1000)) return s;
-  try {
-    const r = await raw('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: s.refresh_token }, anon: true });
-    const ns = toSession(r);
-    saveSession(ns);
-    return ns;
-  } catch { saveSession(null); return null; }
+  const initial = loadSession();
+  if (!initial) return null;
+  if (initial.expires_at && initial.expires_at - 60 > Math.floor(Date.now() / 1000)) return initial;
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const current = loadSession();
+    if (!current) return null;
+    if (current.expires_at && current.expires_at - 60 > Math.floor(Date.now() / 1000)) return current;
+    try {
+      const r = await raw('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: current.refresh_token }, anon: true });
+      const ns = toSession(r);
+      saveSession(ns);
+      return ns;
+    } catch (error) {
+      // A falha de rede não deve apagar uma sessão válida. Só removemos tokens rejeitados.
+      const latest = loadSession();
+      // Another tab may have rotated the token first; reuse the newer session.
+      if (latest && latest.refresh_token && latest.refresh_token !== current.refresh_token) return latest;
+      if ((error.status === 400 || error.status === 401) && latest && latest.refresh_token === current.refresh_token) {
+        saveSession(null);
+        return null;
+      }
+      throw error;
+    }
+  })();
+  try { return await refreshPromise; }
+  finally { refreshPromise = null; }
 }
 
 function toSession(r) {
@@ -36,7 +55,9 @@ function toSession(r) {
            expires_at: r.expires_at || (Math.floor(Date.now() / 1000) + (r.expires_in || 3600)), user: r.user };
 }
 
-async function raw(path, { method = 'GET', body, token, anon, headers = {} } = {}) {
+async function raw(path, { method = 'GET', body, token, anon, headers = {}, timeoutMs = 15000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   let res;
   try {
     res = await fetch(CONFIG.SUPABASE_URL + path, {
@@ -44,17 +65,27 @@ async function raw(path, { method = 'GET', body, token, anon, headers = {} } = {
       headers: { apikey: CONFIG.SUPABASE_KEY, 'Content-Type': 'application/json',
                  Authorization: 'Bearer ' + (anon ? CONFIG.SUPABASE_KEY : (token || CONFIG.SUPABASE_KEY)), ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: controller.signal,
     });
-  } catch {
+  } catch (cause) {
+    if (cause && cause.name === 'AbortError') {
+      throw new Error('O Supabase demorou demais para responder. Verifique a conexão e tente novamente.');
+    }
     throw new Error('Sem conexão com a internet. Este site precisa de internet para funcionar.');
+  } finally {
+    clearTimeout(timer);
   }
   let data = null;
-  const text = await res.text();
-  if (text) { try { data = JSON.parse(text); } catch { data = text; } }
+  const responseText = await res.text();
+  if (responseText) { try { data = JSON.parse(responseText); } catch { data = responseText; } }
   if (!res.ok) {
     const msg = data && (data.message || data.msg || data.error_description || data.error);
     const err = new Error(friendly(msg, res.status));
-    err.status = res.status; err.code = data && data.code;
+    err.status = res.status;
+    err.code = data && data.code;
+    err.details = data && data.details;
+    err.hint = data && data.hint;
+    err.path = path;
     throw err;
   }
   return data;
@@ -65,8 +96,31 @@ async function authed(path, opts = {}) {
   return raw(path, { ...opts, token: s && s.access_token });
 }
 
+let profileDiagnostic = null;
+
 export const api = {
   session: () => loadSession(),
+  lastProfileDiagnostic: () => profileDiagnostic,
+  // Diagnóstico somente de leitura: identifica tabelas antigas/novas e erros de RLS.
+  async diagnose() {
+    const session = loadSession();
+    let user = null;
+    try { user = session ? await authed('/auth/v1/user') : null; }
+    catch (error) { return { authenticated: false, authError: error.message, tables: [] }; }
+    const names = ['profiles','clientes','customers','services','servicos','appointments','reservas',
+      'availability_blocks','fila_espera','subscriptions','assinaturas_clientes','cash_sessions','caixa',
+      'sales','vendas','products','produtos'];
+    const tables = await Promise.all(names.map(async (name) => {
+      try {
+        const rows = await api.select(name, 'select=*&limit=1');
+        return { name, status: 'ok', hasRows: Array.isArray(rows) && rows.length > 0 };
+      } catch (error) {
+        return { name, status: 'error', httpStatus: error.status || null, code: error.code || null,
+          message: error.message };
+      }
+    }));
+    return { authenticated: !!user, userId: user && user.id, email: user && user.email, tables };
+  },
   // chama uma função do banco (regras de negócio ficam no servidor)
   rpc: (name, args = {}) => authed('/rest/v1/rpc/' + name, { method: 'POST', body: args }),
   // lê uma tabela. Exemplo: api.select('services', 'select=*&is_active=eq.true')
@@ -101,20 +155,39 @@ export const api = {
   },
 };
 
-// Perfil + papel do usuário logado (admin ou cliente) — validado no servidor pelas políticas RLS
+// Perfil + papel do usuário. Compatibilidade de leitura com a tabela antiga clientes.
 export async function currentProfile() {
   const s = loadSession();
+  profileDiagnostic = null;
   if (!s) return null;
+  let user;
+  try { user = await authed('/auth/v1/user'); }
+  catch (error) {
+    profileDiagnostic = 'Não foi possível validar sua sessão: ' + error.message;
+    return null;
+  }
+  const userId = user && user.id;
+  if (!userId) {
+    profileDiagnostic = 'O Supabase não retornou o identificador da conta. Saia e entre novamente.';
+    return null;
+  }
   try {
-    // O ID do usuário já vem salvo na sessão. Evita uma chamada extra ao Auth
-    // antes de consultar o perfil, acelerando a abertura do painel.
-    let userId = s.user && s.user.id;
-    if (!userId) {
-      const u = await authed('/auth/v1/user');
-      userId = u && u.id;
+    const rows = await api.select('profiles', 'select=id,role,full_name,whatsapp,email,birth_date,marketing_opt_in,is_active&id=eq.' + encodeURIComponent(userId));
+    if (rows[0]) return rows[0];
+    profileDiagnostic = 'A tabela profiles respondeu, mas não há perfil vinculado a esta conta.';
+  } catch (error) {
+    profileDiagnostic = 'Não foi possível consultar profiles: ' + error.message;
+  }
+  try {
+    const legacy = await api.select('clientes', 'select=id,nome,telefone,papel&id=eq.' + encodeURIComponent(userId));
+    if (legacy[0]) {
+      const row = legacy[0];
+      return { id: row.id, role: row.papel, full_name: row.nome, whatsapp: row.telefone,
+        email: user.email || null, is_active: true, _legacyTable: 'clientes' };
     }
-    if (!userId) return null;
-    const rows = await api.select('profiles', 'select=id,role&id=eq.' + encodeURIComponent(userId));
-    return rows[0] || null;
-  } catch { return null; }
+    profileDiagnostic += ' A tabela clientes existe, mas não há registro com o mesmo ID da conta autenticada.';
+  } catch (error) {
+    profileDiagnostic += ' Também não foi possível consultar clientes: ' + error.message;
+  }
+  return null;
 }
