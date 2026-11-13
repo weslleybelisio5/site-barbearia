@@ -37,6 +37,8 @@ async function refreshIfNeeded() {
     } catch (error) {
       // A falha de rede não deve apagar uma sessão válida. Só removemos tokens rejeitados.
       const latest = loadSession();
+      // Another tab may have rotated the token first; reuse the newer session.
+      if (latest && latest.refresh_token && latest.refresh_token !== current.refresh_token) return latest;
       if ((error.status === 400 || error.status === 401) && latest && latest.refresh_token === current.refresh_token) {
         saveSession(null);
         return null;
