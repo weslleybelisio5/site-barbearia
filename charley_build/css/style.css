@@ -269,3 +269,33 @@ table.t tr:hover td{background:rgba(255,255,255,.025)}
 .booking-progress>i{height:1px;flex:1;background:#3a4049;min-width:10px}
 .booking-progress-step.is-done{color:var(--orange2)}
 @media(max-width:420px){.booking-progress{gap:6px;padding:12px 9px}.booking-progress-step{gap:5px}.booking-progress-step small{font-size:.68rem}.booking-progress-step span{width:26px;height:26px}}
+
+
+/* Microinterações da página inicial — leves e acessíveis */
+.home-motion .block .wrap>*{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s cubic-bezier(.2,.7,.2,1)}
+.home-motion .block .wrap.is-inview>*{opacity:1;transform:translateY(0)}
+.home-motion .block .wrap.is-inview>*:nth-child(2){transition-delay:.07s}
+.home-motion .block .wrap.is-inview>*:nth-child(3){transition-delay:.13s}
+.home-motion .card,.home-motion .hero .btn,.home-motion .help-teaser .btn{transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+.home-motion .card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.home-motion .hero-object{transition:transform .25s ease}
+.home-motion .hero-chip{animation:chipDrift 5s ease-in-out infinite}
+@keyframes chipDrift{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.home-motion .hero-glow{animation:glowBreath 7s ease-in-out infinite}
+@keyframes glowBreath{0%,100%{opacity:.45;transform:scale(.96)}50%{opacity:.8;transform:scale(1.04)}}
+.booking-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0 14px}
+.booking-field{display:grid;gap:8px;min-width:0}
+.booking-field label{margin:0;font-weight:700}
+.booking-field label span{font-weight:400;color:var(--muted)}
+.booking-notes{margin:0 0 18px}
+.booking-notes textarea{display:block;width:100%;min-height:132px;resize:vertical;line-height:1.55;padding:14px 15px}
+.booking-field small{color:var(--muted);font-size:.78rem;text-align:right}
+#form .booking-fields,#form .booking-notes{width:100%}
+@media(max-width:560px){
+ .booking-fields{grid-template-columns:1fr;gap:12px}
+ .booking-notes textarea{min-height:116px}
+}
+@media(prefers-reduced-motion:reduce){
+ .home-motion .block .wrap>*{opacity:1;transform:none;transition:none}
+ .home-motion .hero-chip,.home-motion .hero-glow{animation:none}
+}
