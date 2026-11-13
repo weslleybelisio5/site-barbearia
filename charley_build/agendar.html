@@ -29,9 +29,11 @@
     <div class="step"><h2>Escolha o dia e o horário</h2>
       <label for="date">Dia</label><input type="date" id="date"><div id="slots"><p class="hint">Escolha pelo menos um serviço para ver os horários.</p></div></div>
     <form id="form" class="step" novalidate><h2 id="step3">Seus dados</h2>
-      <label for="name">Nome</label><input id="name" autocomplete="name" required>
-      <label for="wa">WhatsApp com DDD</label><input id="wa" inputmode="tel" autocomplete="tel" placeholder="(81) 99999-9999" required>
-      <label for="notes">Observação (opcional)</label><textarea id="notes" maxlength="300"></textarea>
+      <div class="booking-fields">
+        <div class="booking-field"><label for="name">Nome</label><input id="name" autocomplete="name" required></div>
+        <div class="booking-field"><label for="wa">WhatsApp com DDD</label><input id="wa" inputmode="tel" autocomplete="tel" placeholder="(81) 99999-9999" required></div>
+      </div>
+      <div class="booking-field booking-notes"><label for="notes">Observação <span>(opcional)</span></label><textarea id="notes" maxlength="300" placeholder="Conte se tem alguma preferência ou detalhe importante para o atendimento…"></textarea><small>Até 300 caracteres</small></div>
       <div id="summary" class="summary" hidden></div>
       <p class="err" id="form-err" role="alert"></p>
       <button class="btn" id="go" type="submit" disabled>Confirmar agendamento</button>
