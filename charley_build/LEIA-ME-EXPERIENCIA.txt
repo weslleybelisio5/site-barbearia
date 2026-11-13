@@ -1,0 +1,29 @@
+BARBEARIA DO CHARLEY — PACOTE DE EXPERIÊNCIA MOBILE
+
+Base: pacote V6/correção de painel disponibilizado nesta conversa.
+
+Implementado:
+- Nova página ajuda.html com central de ajuda e tutoriais visuais de cancelamento e remarcação.
+- Atalho da Central de Ajuda na página inicial e no menu principal.
+- Assistente guiado leve no cabeçalho global, com caminhos reais para agendar, consultar reserva, tutoriais e WhatsApp.
+- Hero renovado com profundidade/efeito 3D em CSS e SVG inline.
+- Motion discreto com CSS e IntersectionObserver, respeitando prefers-reduced-motion.
+- Layout mobile-first e sem dependências/bibliotecas externas novas.
+- Service worker com versão de cache atualizada.
+
+Custos:
+- Nenhum serviço externo novo.
+- Nenhuma API de IA.
+- Nenhum modelo 3D pesado ou biblioteca 3D.
+- Sem funções Netlify, sem novas consultas Supabase para o assistente.
+- A publicação de produção no Netlify continua consumindo 15 créditos por deploy conforme a documentação oficial. Este pacote NÃO foi publicado.
+
+Limites importantes:
+- O assistente é guiado e encaminha para os fluxos já existentes. Ele não cancela nem remarca diretamente no chat.
+- Cancelamento/remarcação continuam sujeitos à autenticação, regras e validações existentes na página Minha reserva.
+- Os mockups do tutorial são ilustrativos; a execução acontece nas páginas reais do sistema.
+
+Validação realizada:
+- Sintaxe JavaScript verificada com node --check.
+- Referências locais HTML/CSS/JS verificadas.
+- Não foi realizado teste E2E autenticado contra o Supabase nem publicação de produção.

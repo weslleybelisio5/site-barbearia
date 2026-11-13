@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agendar horário | Barbearia do Charley</title>
+<meta name="description" content="Agende seu horário na Barbearia do Charley: escolha os serviços, veja os horários livres e confirme em poucos cliques.">
+<meta name="theme-color" content="#0b0b0b">
+<meta property="og:type" content="website"><meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Agendar horário | Barbearia do Charley"><meta property="og:description" content="Agende seu horário na Barbearia do Charley: escolha os serviços, veja os horários livres e confirme em poucos cliques.">
+<meta property="og:image" content="https://barbeariadocharley.netlify.app/icons/og.jpg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+<a class="sr" href="#main">Ir para o conteúdo</a>
+<header id="app-header"></header>
+<main id="main">
+
+<section class="block"><div class="wrap" style="max-width:760px">
+  <h1>Agendar horário</h1>
+  <p class="muted">Não precisa criar conta: basta seu nome e WhatsApp.</p>
+  <div id="flow" class="steps">
+    <div class="step"><h2>Escolha os serviços</h2><div class="grid" id="svc-pick" style="grid-template-columns:1fr"><p class="loading"><span class="spin"></span>Carregando…</p></div></div>
+    <div class="step"><h2>Escolha o dia e o horário</h2>
+      <label for="date">Dia</label><input type="date" id="date"><div id="slots"><p class="hint">Escolha pelo menos um serviço para ver os horários.</p></div></div>
+    <form id="form" class="step" novalidate><h2 id="step3">Seus dados</h2>
+      <label for="name">Nome</label><input id="name" autocomplete="name" required>
+      <label for="wa">WhatsApp com DDD</label><input id="wa" inputmode="tel" autocomplete="tel" placeholder="(81) 99999-9999" required>
+      <label for="notes">Observação (opcional)</label><textarea id="notes" maxlength="300"></textarea>
+      <div id="summary" class="summary" hidden></div>
+      <p class="err" id="form-err" role="alert"></p>
+      <button class="btn" id="go" type="submit" disabled>Confirmar agendamento</button>
+      <p class="hint">Ao agendar, você concorda com os <a href="termos.html">Termos de Uso</a> e a <a href="privacidade.html">Política de Privacidade</a>. Cancelamento online até 2 horas antes; remarcação a qualquer momento.</p>
+    </form>
+  </div>
+  <p class="muted">Já agendou? <a href="minha-reserva.html">Ver meus agendamentos</a></p>
+</div></section>
+</main>
+<footer id="app-footer"></footer>
+<script type="module" src="js/agendar.js"></script>
+</body>
+</html>
