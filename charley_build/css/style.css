@@ -374,3 +374,65 @@ footer#app-footer{position:relative;isolation:isolate;overflow:hidden;padding:0 
 .site-motion main section.block .wrap .card:hover{transform:translateY(-5px) rotateX(1deg);border-color:rgba(242,138,36,.35);box-shadow:0 18px 38px rgba(0,0,0,.25)}
 .site-motion .btn:active,.site-motion button:active{filter:brightness(1.08)}
 @media(prefers-reduced-motion:reduce){.site-motion main section.block .wrap>*{opacity:1;transform:none;transition:none}.site-motion main section.block .wrap .card:hover{transform:none}}
+
+
+/* CHARLEY EXPERIENCE 2.0 — profundidade e microinterações em todas as áreas */
+:root{--depth-shadow:0 22px 55px rgba(0,0,0,.34);--edge-glow:rgba(242,138,36,.24)}
+body{isolation:isolate}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.2;background:radial-gradient(circle at 8% 18%,rgba(242,138,36,.10),transparent 23%),radial-gradient(circle at 92% 72%,rgba(242,138,36,.07),transparent 25%);will-change:background-position}
+.block,.adm-wrap{position:relative}
+.block:not(.hero)::after{content:"";position:absolute;top:22px;right:clamp(16px,5vw,72px);width:82px;height:82px;border:1px solid rgba(242,138,36,.10);border-radius:26px;transform:rotate(28deg);pointer-events:none;opacity:.5}
+.card,.stat,.metric-chart,.help-card,.product-card,.tutorial-visual,.summary,.notice,.ok-box{position:relative;transform-style:preserve-3d;transition:transform .28s cubic-bezier(.2,.7,.2,1),border-color .28s ease,box-shadow .28s ease,background .28s ease}
+.card::before,.stat::before,.metric-chart::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,.045),transparent 38%,rgba(242,138,36,.035));opacity:.75}
+.card:hover,.stat:hover,.metric-chart:hover,.help-card:hover,.product-card:hover{border-color:rgba(242,138,36,.48);box-shadow:var(--depth-shadow),0 0 28px rgba(242,138,36,.055)}
+.stat{overflow:hidden;background:linear-gradient(145deg,#202020,#121212);box-shadow:inset 0 1px rgba(255,255,255,.035),0 8px 20px rgba(0,0,0,.16)}
+.stat::after{content:"";position:absolute;width:90px;height:90px;right:-42px;top:-46px;border-radius:50%;border:1px solid rgba(242,138,36,.16);box-shadow:0 0 24px rgba(242,138,36,.08)}
+.stat b{position:relative;z-index:1;text-shadow:0 4px 18px rgba(242,138,36,.16);font-variant-numeric:tabular-nums}
+.adm-bar{box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.adm-tabs a{position:relative;transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease}
+.adm-tabs a:hover{transform:translateY(-2px);border-color:var(--orange);box-shadow:0 7px 18px rgba(242,138,36,.10)}
+.adm-tabs a[aria-current]::after{content:"";position:absolute;left:18px;right:18px;bottom:3px;height:2px;border-radius:2px;background:#111}
+.btn{position:relative;overflow:hidden;transform:translateZ(0);transition:transform .18s ease,box-shadow .2s ease,filter .2s ease}
+.btn::after{content:"";position:absolute;inset:-60% auto -60% -45%;width:28%;transform:rotate(20deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transition:left .55s ease;pointer-events:none}
+.btn:hover{box-shadow:0 10px 24px rgba(242,138,36,.16);filter:saturate(1.08)}
+.btn:hover::after{left:125%}
+.btn:active{transform:translateY(1px) scale(.975)}
+.metric-chart{padding:18px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(ellipse at 50% 100%,rgba(242,138,36,.08),transparent 62%),linear-gradient(145deg,#1b1b1b,#101010);overflow:hidden}
+.chart-bars{align-items:end;min-height:190px;gap:clamp(7px,2vw,18px);padding:16px 4px 2px}
+.chart-col{min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;gap:8px}
+.chart-track{height:132px;width:min(100%,34px);display:flex;align-items:end;border-radius:12px 12px 5px 5px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.045);overflow:hidden;box-shadow:inset 0 5px 12px rgba(0,0,0,.24)}
+.chart-fill{width:100%;min-height:4px;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,#ffb15f 0%,#f28a24 58%,#b9500d 100%);box-shadow:0 0 22px rgba(242,138,36,.24);transform-origin:bottom;animation:chartRise .9s cubic-bezier(.2,.8,.2,1) both;position:relative}
+.chart-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);animation:chartShine 3.2s ease-in-out infinite}
+.chart-col>b{font-size:clamp(.58rem,1vw,.78rem);white-space:nowrap;color:#eee}
+.chart-col small{font-size:.72rem;color:var(--muted)}
+@keyframes chartRise{from{transform:scaleY(.08);opacity:.45}to{transform:scaleY(1);opacity:1}}
+@keyframes chartShine{0%,100%{transform:translateX(-110%)}55%{transform:translateX(110%)}}
+.adm-wrap h2{letter-spacing:-.025em}
+.adm-wrap> .row:first-child h2,.adm-wrap>div>.row:first-child h2{text-shadow:0 8px 28px rgba(242,138,36,.08)}
+.ap,.week .col,.cal .d{transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.ap:hover,.week .col:hover,.cal .d:hover{transform:translateY(-2px);border-color:rgba(242,138,36,.42);box-shadow:0 12px 28px rgba(0,0,0,.22)}
+input,select,textarea{transition:border-color .2s ease,box-shadow .2s ease,background .2s ease}
+input:hover,select:hover,textarea:hover{border-color:#686868}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 4px rgba(242,138,36,.10),0 8px 22px rgba(0,0,0,.18)}
+.site-motion .block .wrap{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.site-motion .block .wrap.is-inview{opacity:1;transform:none}
+.site-motion .block .wrap>*{transition:transform .35s ease}
+.site-motion .block .wrap.is-inview>*{animation:contentSettle .65s both}
+.site-motion .block .wrap.is-inview>*:nth-child(2){animation-delay:.06s}
+.site-motion .block .wrap.is-inview>*:nth-child(3){animation-delay:.12s}
+@keyframes contentSettle{from{opacity:.4;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(hover:hover) and (pointer:fine){
+ .card,.stat,.metric-chart,.product-card,.help-card{will-change:transform}
+ .svc.pick:hover{transform:translateY(-3px) rotateX(1deg);box-shadow:0 14px 28px rgba(0,0,0,.25)}
+}
+@media(max-width:700px){
+ .block:not(.hero)::after{width:48px;height:48px;right:18px;top:18px;opacity:.28}
+ .chart-bars{min-height:160px}.chart-track{height:108px;width:min(100%,28px)}
+ .chart-col>b{font-size:.58rem}
+ .adm-wrap{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){
+ .site-motion .block .wrap,.site-motion .block .wrap.is-inview{opacity:1;transform:none;animation:none}
+ .chart-fill,.chart-fill::after{animation:none}
+ .card,.stat,.metric-chart,.help-card,.btn,.adm-tabs a{transition:none}
+}
