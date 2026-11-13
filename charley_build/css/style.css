@@ -260,3 +260,12 @@ table.t tr:hover td{background:rgba(255,255,255,.025)}
 @media(prefers-reduced-motion:no-preference){.adm-wrap>.row,.adm-wrap>.stats,.adm-wrap>.grid,.adm-wrap>.card{animation:softEnter .42s var(--ease) both}.adm-wrap>.stats{animation-delay:.04s}.adm-wrap>.grid{animation-delay:.08s}}
 @keyframes softEnter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.hero-object,.chart-fill{animation:none!important}.card,.stat,.btn,.slot,.svc.pick{transition:none!important}}
+
+.booking-progress{display:flex;align-items:center;gap:10px;margin:24px 0 10px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#171b21,#101216)}
+.booking-progress-step{display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap;transition:color .2s ease}
+.booking-progress-step span{width:30px;height:30px;display:grid;place-items:center;border:1px solid #414752;border-radius:50%;font-weight:800;font-size:.82rem}
+.booking-progress-step small{font-size:.78rem;font-weight:700}
+.booking-progress-step.is-active{color:#fff}.booking-progress-step.is-active span,.booking-progress-step.is-done span{background:var(--orange);border-color:var(--orange);color:#111}
+.booking-progress>i{height:1px;flex:1;background:#3a4049;min-width:10px}
+.booking-progress-step.is-done{color:var(--orange2)}
+@media(max-width:420px){.booking-progress{gap:6px;padding:12px 9px}.booking-progress-step{gap:5px}.booking-progress-step small{font-size:.68rem}.booking-progress-step span{width:26px;height:26px}}
