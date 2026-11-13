@@ -183,6 +183,21 @@ export async function mountChrome(active) {
     footer.addEventListener('pointerleave', () => { footerVisual.style.setProperty('--mx','0px'); footerVisual.style.setProperty('--my','0px'); });
   }
 
+  // Elementos da página entram suavemente conforme a rolagem, sem esconder conteúdo se o recurso não existir.
+  document.body.classList.add('site-motion');
+  const motionTargets = [...document.querySelectorAll('main section.block .wrap')];
+  if ('IntersectionObserver' in window) {
+    const motionObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-inview');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -28px 0px' });
+    motionTargets.forEach((el) => motionObserver.observe(el));
+  } else motionTargets.forEach((el) => el.classList.add('is-inview'));
+
   const w = document.createElement('a');
   w.className = 'wa-float'; w.target = '_blank'; w.rel = 'noopener'; w.setAttribute('aria-label', 'Chamar no WhatsApp');
   w.href = waLink(s.shop_whatsapp, 'Olá! Vim pelo site da Barbearia do Charley.');
