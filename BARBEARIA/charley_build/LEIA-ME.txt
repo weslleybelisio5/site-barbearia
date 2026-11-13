@@ -1,0 +1,36 @@
+BARBEARIA DO CHARLEY — VERSÃO V6 (CORREÇÕES E MÓDULOS)
+
+PUBLICAÇÃO
+1. Extraia o ZIP.
+2. Envie o conteúdo desta pasta para o Netlify, substituindo a versão anterior.
+3. index.html deve ficar na raiz publicada.
+
+SUPABASE — ATENÇÃO
+- Os scripts originais 1, 2, 3 e 4 NÃO devem ser executados novamente.
+- Você informou que já executou o PATCH-V6.sql. NÃO execute novamente. Só rode uma migração nova após comparar o schema atual e fazer exportação manual dos dados.
+- O PATCH-V6.sql adiciona apenas colunas e funções complementares; não apaga tabelas nem dados existentes.
+- Não coloque service_role, senha de banco ou tokens secretos no frontend.
+
+O QUE FOI CORRIGIDO / ADICIONADO
+- Caixa: validação dos campos, erro real exibido, histórico de movimentos e resumo atualizado após cada operação.
+- Avaliações: cliente pode avaliar atendimentos concluídos; painel mostra média, pendentes e permite aprovar/rejeitar/ocultar.
+- Assinaturas: botão para vincular cliente a plano, ativar com pagamento, gerar créditos do ciclo e administrar status/renovação.
+- Metas: título, descrição, responsável, período personalizado e acompanhamento de progresso com dados do relatório.
+- Campanhas: segmentos de clientes com consentimento de marketing, preparação de público, lista individual, link WhatsApp e controle de andamento.
+- LGPD: formulário de solicitação na conta do cliente, explicação de cada tipo de pedido e ações administrativas, incluindo anonimização com confirmação.
+- Relatórios: indicadores ampliados, listagens detalhadas de pagamentos, despesas, agendamentos e vendas, além de CSV completo.
+- Lista de espera: novo módulo administrativo para visualizar pedidos, processar data, cancelar e reativar.
+- Desempenho: consultas de agenda com seleção de campos necessários, limite de resultados e estado de carregamento por módulo; cache do service worker atualizado.
+
+CAMPANHAS / WHATSAPP
+Por segurança e pelas limitações do ambiente gratuito, as campanhas abrem conversas individuais no WhatsApp para envio manual. Não há disparo automático em massa. O sistema só prepara clientes que marcaram consentimento para receber mensagens.
+
+VALIDAÇÃO
+- JavaScript validado com `node --check`.
+- Referências locais de HTML/CSS/JS verificadas.
+- O funcionamento real das RPCs, permissões RLS e dados do seu Supabase depende de executar PATCH-V6.sql e testar no seu projeto publicado.
+
+
+AUDITORIA
+- Consulte RELATORIO-AUDITORIA-COMPLETA.md para a matriz de requisitos, validações estáticas e pendências antes de colocar clientes reais.
+- Este pacote não foi publicado no Netlify e não executa alterações no Supabase.

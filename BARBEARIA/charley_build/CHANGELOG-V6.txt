@@ -1,0 +1,13 @@
+V6 — Correções solicitadas pelo administrador
+
+1. Caixa: erros não são mais ocultados como se não houvesse caixa; campos obrigatórios; listagem de movimentos e resumo após salvar.
+2. Avaliações: botão para avaliar atendimentos concluídos na área do cliente e gestão de status no painel.
+3. Assinaturas: cadastro administrativo de assinatura vinculando cliente e plano, ativação/geração de créditos e gestão do ciclo.
+4. Metas: mais informações e progresso calculado a partir dos relatórios.
+5. Campanhas: segmentação, preparação de destinatários com consentimento, WhatsApp individual e controle de envio.
+6. LGPD: formulário de solicitação e tratamento administrativo detalhado.
+7. Relatórios: detalhamento e exportação CSV ampliada.
+8. Lista de espera: módulo administrativo de consulta e processamento.
+9. Agenda: payload reduzido e carregamento de módulos com feedback.
+
+Necessário executar PATCH-V6.sql uma vez no Supabase.
