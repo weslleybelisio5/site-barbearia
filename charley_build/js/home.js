@@ -29,3 +29,32 @@ try {
   const gallery = await api.select('gallery_items', 'select=id,title,description,image_url&is_visible=eq.true&is_demo=eq.false&order=is_featured.desc,published_at.desc&limit=6');
   if (gallery.length) { $('#galeria').hidden = false; $('#gallery-list').innerHTML = gallery.map(g => `<article class="card"><img src="${esc(g.image_url)}" alt="${esc(g.title)}" loading="lazy" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px"><h3>${esc(g.title)}</h3>${g.description ? `<p>${esc(g.description)}</p>` : ''}</article>`).join(''); }
 } catch {}
+
+
+// Entrada suave dos blocos ao rolar a página e microinteração discreta no hero.
+document.body.classList.add('home-motion');
+const revealTargets = [...document.querySelectorAll('main .block .wrap')];
+if ('IntersectionObserver' in window) {
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-inview');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -35px 0px' });
+  revealTargets.forEach((el) => revealObserver.observe(el));
+} else {
+  revealTargets.forEach((el) => el.classList.add('is-inview'));
+}
+const hero = document.querySelector('.hero');
+const heroObject = document.querySelector('.hero-object');
+if (hero && heroObject && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  hero.addEventListener('pointermove', (event) => {
+    const rect = hero.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    heroObject.style.transform = `translate3d(${x * 7}px, ${y * 6}px, 0) rotateY(${x * 3}deg) rotateX(${-y * 2}deg)`;
+  });
+  hero.addEventListener('pointerleave', () => { heroObject.style.transform = ''; });
+}
