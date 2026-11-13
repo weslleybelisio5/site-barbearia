@@ -221,7 +221,7 @@ async function newAppointment(pre = {}) {
     try {
       await api.rpc('admin_create_appointment', { p_service_ids: ids, p_start: toIso($('#nd', d).value, $('#nt', d).value), p_name: $('#nm', d).value.trim() || null, p_whatsapp: onlyDigits($('#wa', d).value) || null,
         p_customer_id: d.dataset.cust || null, p_notes: $('#nn', d).value.trim() || null });
-      d.close(); toast('Agendamento criado.', 'success'); S.date = $('#nd', d).value; if (S.tab === 'agenda') viewAgenda();
+      d.close(); toast('Agendamento criado.', 'success'); S.date = $('#nd', d).value; if (S.tab === 'agenda') viewAgenda(); else if (S.tab === 'resumo') viewOverview();
     } catch (ex) { $('#e', d).textContent = ex.message; }
   };
 }
