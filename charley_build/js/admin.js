@@ -27,19 +27,30 @@ function modal(html) {
 const guard = async (fn) => { try { return await fn(); } catch (e) { toast(e.message, 'error'); return null; } };
 
 async function init() {
-  const me = api.session() ? await currentProfile() : null;
-  if (!me || me.role !== 'admin') {
-    root.innerHTML = `<div class="adm-wrap"><div class="card" style="max-width:480px"><h1>Painel do Charley</h1>
-      <p>${me ? 'Esta conta não tem acesso ao painel.' : 'Entre com a conta do administrador para continuar.'}</p>
-      <a class="btn" href="conta.html">${me ? 'Voltar à minha conta' : 'Entrar'}</a></div></div>`;
-  } else {
-    // Mostra o painel assim que a permissão é confirmada; serviços são
-    // carregados sob demanda ao abrir telas que realmente precisam deles.
-    shell();
-    route();
-    window.addEventListener('hashchange', route);
+  root.innerHTML = '<div class="adm-wrap"><div class="card"><p class="loading"><span class="spin"></span>Verificando acesso…</p></div></div>';
+  try {
+    const me = api.session() ? await currentProfile() : null;
+    if (!me || String(me.role || '').toLowerCase() !== 'admin') {
+      const diagnostic = api.lastProfileDiagnostic();
+      root.innerHTML = `<div class="adm-wrap"><div class="card" style="max-width:560px"><h1>Painel do Charley</h1>
+        <p>${me ? 'Esta conta não tem acesso ao painel.' : api.session() ? 'Não foi possível confirmar seu perfil administrativo.' : 'Entre com a conta do administrador para continuar.'}</p>
+        ${diagnostic ? `<div class="notice error" role="alert">${esc(diagnostic)}</div>` : ''}
+        <div class="row"><a class="btn" href="conta.html">${me ? 'Voltar à minha conta' : 'Entrar'}</a>
+        <button class="btn ghost" id="diag" type="button">Diagnosticar conexão</button></div>
+        <pre id="diag-result" class="mini" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></div></div>`;
+      $('#diag')?.addEventListener('click', async () => {
+        const out = $('#diag-result'); out.textContent = 'Verificando tabelas e permissões…';
+        try { const report = await api.diagnose(); out.textContent = JSON.stringify(report, null, 2); }
+        catch (error) { out.textContent = error.message; }
+      });
+    } else {
+      shell();
+      route();
+      window.addEventListener('hashchange', route);
+    }
+  } catch (error) {
+    root.innerHTML = `<div class="adm-wrap"><div class="card"><h1>Painel do Charley</h1><div class="notice error">${esc(error.message || 'Falha ao iniciar o painel.')}</div><a class="btn" href="conta.html">Voltar</a></div></div>`;
   }
-
 }
 
 function shell() {
