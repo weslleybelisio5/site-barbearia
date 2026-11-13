@@ -79,3 +79,42 @@ O assistente é um guia de navegação: **não executa sozinho cancelamentos ou 
 ## Publicação
 
 Este pacote não foi publicado. Não faça novo deploy até revisar este relatório e testar o backend; isso evita consumir créditos do Netlify em uma versão ainda não validada.
+
+
+## Complemento — auditoria integrada do Supabase (13/11/2026)
+
+Após a auditoria estática acima, o projeto Supabase `barbearia-do-charley` foi conectado e inspecionado diretamente. O banco está ativo em PostgreSQL 17. A estrutura atual contém as tabelas em inglês usadas pela versão V6, além de um conjunto legado em português. O código atual usa principalmente as tabelas em inglês; portanto, a existência das tabelas legadas não significa que seja necessário renomear ou migrar os dados.
+
+### Correções aplicadas
+
+- O gatilho `handle_new_user()` agora grava o perfil novo em `public.profiles` com papel fixo `client`. O trigger de sincronização existente também cria o registro correspondente em `customers`.
+- RPCs `SECURITY DEFINER` tiveram execução anônima removida por padrão. Permanecem liberadas anonimamente apenas as operações públicas necessárias para consultar disponibilidade, criar/cancelar/remarcar agendamentos por token e consultar agendamento por token. RPCs administrativas exigem usuário autenticado e checagem administrativa no banco.
+- `complete_appointment` recebeu a permissão autenticada necessária, mantendo a validação administrativa interna.
+- Views `public_products`, `public_kits` e `public_reviews` foram configuradas como `security_invoker`.
+- A role anônima pode consultar apenas os campos públicos necessários. Custo dos produtos, quantidade exata de estoque e identificador do autor da avaliação não ficam expostos. O catálogo informa apenas `in_stock`.
+- Foram adicionados índices para consultas frequentes de agenda, bloqueios, movimentos de caixa, pagamentos, itens de venda, destinatários de campanha, avaliações e lista de espera.
+- O JavaScript do painel foi corrigido para remover o erro de sintaxe em `viewCaixa`. Foi acrescentada a Visão geral administrativa, melhor diagnóstico de sessão e proteção contra corrida na renovação do refresh token.
+- O relatório detalhado de despesas foi alinhado ao mesmo intervalo de pagamentos de despesas pagas utilizado no total do relatório.
+- As metas passaram a aceitar mais indicadores e datas personalizadas.
+
+### Validações realizadas no banco
+
+- 2 usuários Auth e 2 perfis existentes; 1 perfil administrador ativo.
+- Teste transacional do trigger de cadastro: perfil e registro de cliente foram criados corretamente para um usuário sintético; a transação foi revertida.
+- Teste público: 2 produtos e 1 kit retornados pelas views; custo, quantidade exata e perfil do autor de avaliação não acessíveis à role anônima.
+- Teste de permissões: role anônima sem permissão para registrar venda administrativa; RPCs administrativas disponíveis à role autenticada e protegidas pela checagem de administrador no corpo.
+- Testes transacionais com identidade administrativa simulada: resumo do caixa, relatório, lista de espera, movimentação de caixa, venda, criação de assinatura e conclusão de atendimento executados sem erro. Toda escrita desses testes foi revertida com `ROLLBACK`.
+- Sintaxe verificada nos 17 arquivos JavaScript de `charley_build/js/`; nenhum erro de sintaxe.
+
+### Situação dos dados
+
+Na leitura realizada, o banco tinha 4 agendamentos, 5 clientes, 1 sessão de caixa aberta, 5 movimentações manuais, 2 produtos, 1 kit e 1 plano ativo. Ainda não havia registros em `sales`, `payments`, `subscriptions` ou `reviews`. Por isso, módulos de vendas, pagamentos e assinaturas podem aparecer sem lançamentos reais até as primeiras operações legítimas serem registradas.
+
+### Pendências não declaradas como concluídas
+
+- Não houve teste E2E em navegador, nem inspeção visual do domínio Netlify publicado.
+- A branch de código está em PR separado e ainda não foi incorporada à branch principal nem publicada. A configuração de deploy não está no repositório.
+- Os avisos restantes do Supabase Advisor incluem 7 tabelas legadas com RLS sem políticas (acesso negado por padrão), extensão `btree_gist` em `public`, proteção de senha vazada desativada e avisos de políticas permissivas duplicadas. Esses itens requerem revisão específica; não foram removidas políticas em massa para evitar bloquear funcionalidades existentes.
+- As rotinas de WhatsApp continuam manuais, conversa individual por conversa individual. Não há disparo automático nem serviço externo de mensagens.
+- A validação funcional de escrita foi feita com transações revertidas; a confirmação final de fluxo real deve ser feita no domínio publicado e por operações reais do administrador, sem usar dados de clientes como teste.
+
