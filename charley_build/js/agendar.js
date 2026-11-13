@@ -62,7 +62,18 @@ async function loadSlots() {
 loadSlots.n = 0;
 
 // ---------- resumo ----------
+function updateBookingProgress() {
+  const active = !st.sel.size ? 'service' : !st.slot ? 'date' : 'details';
+  const order = ['service','date','details'];
+  document.querySelectorAll('[data-progress]').forEach((el) => {
+    const index = order.indexOf(el.dataset.progress), current = order.indexOf(active);
+    el.classList.toggle('is-active', index === current);
+    el.classList.toggle('is-done', index < current);
+  });
+}
+
 function renderSummary() {
+  updateBookingProgress();
   const t = totals();
   const box = $('#summary');
   if (!box) return;
