@@ -76,18 +76,36 @@ async function viewOverview() {
   const target = view();
   const today = todayRecife();
   const first = today.slice(0, 8) + '01';
-  const [report, appointments, cash] = await Promise.all([
-    api.rpc('report_summary', { p_from: first, p_to: today }),
-    loadAppts(today, addDays(today, 7)),
+  const fromIso = new Date(first + 'T00:00:00-03:00').toISOString();
+  const untilIso = new Date(addDays(today, 1) + 'T00:00:00-03:00').toISOString();
+  const moneyQuery = (table, select, dateField) =>
+    api.select(table, `select=${select}&${dateField}=gte.${encodeURIComponent(fromIso)}&${dateField}=lt.${encodeURIComponent(untilIso)}&is_demo=eq.false&limit=2000`);
+  const [payments, expenses, monthAppointments, customers, upcoming, cash] = await Promise.all([
+    moneyQuery('payments', 'amount,paid_at,method,kind', 'paid_at').catch(() => []),
+    api.select('expenses', `select=amount,paid_at,status&status=eq.paid&paid_at=gte.${encodeURIComponent(fromIso)}&paid_at=lt.${encodeURIComponent(untilIso)}&is_demo=eq.false&limit=2000`).catch(() => []),
+    api.select('appointments', `select=id,start_at,status,guest_name,guest_whatsapp,estimated_total,final_total,appointment_items(service_name)&start_at=gte.${encodeURIComponent(fromIso)}&start_at=lt.${encodeURIComponent(untilIso)}&is_demo=eq.false&order=start_at&limit=2000`).catch(() => []),
+    api.select('customers', `select=id,created_at&created_at=gte.${encodeURIComponent(fromIso)}&created_at=lt.${encodeURIComponent(untilIso)}&is_demo=eq.false&limit=2000`).catch(() => []),
+    loadAppts(today, addDays(today, 7)).catch(() => []),
     api.rpc('cash_summary').catch(() => null),
   ]);
-  const upcoming = appointments.filter(a => ['pending', 'confirmed'].includes(a.status)).slice(0, 6);
-  const m = report.appointments || {};
-  const cashMethods = cash?.status === "open" ? [["cash","Dinheiro"],["pix","Pix"],["debit","Débito"],["credit","Crédito"],["other","Outro"]].map(([k,label]) => { const paid = Number((cash.payments_by_method || {})[k] || 0); const manual = (cash.movements || []).filter(x => x.method === k).reduce((n,x) => n + (x.kind === "in" ? 1 : -1) * Number(x.amount || 0), 0); return {label,total:paid+manual}; }) : [];
+  const revenue = payments.reduce((n, x) => n + Number(x.amount || 0), 0);
+  const expenseTotal = expenses.reduce((n, x) => n + Number(x.amount || 0), 0);
+  const completed = monthAppointments.filter(x => x.status === 'completed');
+  const upcomingList = upcoming.filter(x => ['pending', 'confirmed'].includes(x.status)).slice(0, 6);
+  const avgTicket = completed.length
+    ? completed.reduce((n, x) => n + Number(x.final_total ?? x.estimated_total ?? 0), 0) / completed.length : 0;
+  const cashMethods = cash?.status === 'open'
+    ? [['cash','Dinheiro'],['pix','Pix'],['debit','Débito'],['credit','Crédito'],['other','Outro']].map(([k,label]) => {
+        const paid = Number((cash.payments_by_method || {})[k] || 0);
+        const manual = (cash.movements || []).filter(x => x.method === k)
+          .reduce((n,x) => n + (x.kind === 'in' ? 1 : -1) * Number(x.amount || 0), 0);
+        return {label,total:paid+manual};
+      }) : [];
   target.innerHTML = `<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><div><h2>Visão geral</h2><p class="muted">Resumo de ${fmtDate(first + 'T12:00:00')} até ${fmtDate(today + 'T12:00:00')}</p></div><div class="row"><button class="btn small ghost" id="refresh-overview">Atualizar painel</button><button class="btn" id="new-from-home">+ Novo agendamento</button></div></div>
-    <div class="stats"><div class="stat">Faturamento do mês<b>${brl(report.revenue || 0)}</b></div><div class="stat">Despesas pagas<b>${brl(report.expenses || 0)}</b></div><div class="stat">Resultado<b>${brl(report.profit || 0)}</b></div><div class="stat">Ticket médio<b>${brl(report.avg_ticket || 0)}</b></div><div class="stat">Atendimentos concluídos<b>${m.completed || 0}</b></div><div class="stat">Novos clientes<b>${report.new_customers || 0}</b></div></div>
-    <div class="grid" style="margin-top:16px"><section class="card"><div class="row" style="justify-content:space-between"><h3>Caixa</h3><span class="badge">${cash?.status === 'open' ? 'Aberto' : 'Fechado'}</span></div>${cash?.status === 'open' ? `<p>Saldo inicial: <b>${brl(cash.opening_amount || 0)}</b></p><p>Dinheiro esperado: <b>${brl(cash.expected_cash || 0)}</b></p><p><b>Resumo por forma</b></p>${cashMethods.map(x => `<p>${x.label}: <b>${brl(x.total)}</b></p>`).join('')}<p class="muted">Os outros meios não alteram o dinheiro físico. Os valores são atualizados ao abrir esta visão.</p>` : '<p class="muted">Não há caixa aberto no momento.</p>'}<button class="btn small ghost" id="open-cash">Abrir módulo Caixa</button></section>
-    <section class="card"><div class="row" style="justify-content:space-between"><h3>Próximos horários</h3><button class="btn small ghost" id="open-agenda">Ver agenda</button></div>${upcoming.length ? upcoming.map(a => `<div class="svc"><div><b>${esc(a.guest_name || 'Cliente')}</b><br><span class="muted">${fmtDate(a.start_at)} · ${fmtTime(a.start_at)} · ${(a.appointment_items || []).map(i => esc(i.service_name)).join(' + ')}</span></div><span class="badge">${STATUS[a.status]?.[0] || esc(a.status)}</span></div>`).join('') : '<p class="muted">Nenhum horário pendente ou confirmado nos próximos 7 dias.</p>'}</section></div>
+    <div class="stats"><div class="stat">Faturamento recebido<b>${brl(revenue)}</b></div><div class="stat">Despesas pagas<b>${brl(expenseTotal)}</b></div><div class="stat">Resultado<b>${brl(revenue-expenseTotal)}</b></div><div class="stat">Ticket médio concluído<b>${brl(avgTicket)}</b></div><div class="stat">Atendimentos concluídos<b>${completed.length}</b></div><div class="stat">Novos clientes<b>${customers.length}</b></div></div>
+    <div class="muted mini">Atendimentos no período: ${monthAppointments.length} · Pagamentos registrados: ${payments.length} · Despesas pagas: ${expenses.length}</div>
+    <div class="grid" style="margin-top:16px"><section class="card"><div class="row" style="justify-content:space-between"><h3>Caixa</h3><span class="badge">${cash?.status === 'open' ? 'Aberto' : 'Fechado'}</span></div>${cash?.status === 'open' ? `<p>Saldo inicial: <b>${brl(cash.opening_amount || 0)}</b></p><p>Dinheiro esperado: <b>${brl(cash.expected_cash || 0)}</b></p><p><b>Resumo por forma</b></p>${cashMethods.map(x => `<p>${x.label}: <b>${brl(x.total)}</b></p>`).join('')}<p class="muted">Os outros meios não alteram o dinheiro físico.</p>` : '<p class="muted">Não há caixa aberto no momento.</p>'}<button class="btn small ghost" id="open-cash">Abrir módulo Caixa</button></section>
+    <section class="card"><div class="row" style="justify-content:space-between"><h3>Próximos horários</h3><button class="btn small ghost" id="open-agenda">Ver agenda</button></div>${upcomingList.length ? upcomingList.map(x => `<div class="svc"><div><b>${esc(x.guest_name || 'Cliente')}</b><br><span class="muted">${fmtDate(x.start_at)} · ${fmtTime(x.start_at)} · ${(x.appointment_items || []).map(i => esc(i.service_name)).join(' + ')}</span></div><span class="badge">${STATUS[x.status]?.[0] || esc(x.status)}</span></div>`).join('') : '<p class="muted">Nenhum horário pendente ou confirmado nos próximos 7 dias.</p>'}</section></div>
     <section class="card" style="margin-top:16px"><h3>Acessos rápidos</h3><div class="row"><button class="btn small ghost" id="quick-clients">Clientes</button><button class="btn small ghost" id="quick-sales">Vendas</button><button class="btn small ghost" id="quick-plans">Planos e assinaturas</button><button class="btn small ghost" id="quick-wait">Lista de espera</button><button class="btn small ghost" id="quick-reports">Relatórios</button></div></section>`;
   $('#refresh-overview').onclick = () => viewOverview();
   $('#new-from-home').onclick = () => newAppointment();
