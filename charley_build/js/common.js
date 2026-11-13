@@ -149,14 +149,39 @@ export async function mountChrome(active) {
   }
   const hours = hoursSummary(await getHours(), s);
   const hl = hours.lines.length ? hours.lines.map((l) => `<li>${esc(l.days)}: ${esc(l.label)}</li>`).join('') + `<li>${esc(hours.lunch)}</li>` : '';
-  $('#app-footer').innerHTML = `<div class="wrap foot">
-    <div><h3>${esc(s.shop_name)}</h3><p>${esc(s.shop_address)}</p>
-      <p><a href="${waLink(s.shop_whatsapp)}" target="_blank" rel="noopener">WhatsApp: ${esc(maskPhone(onlyDigits(s.shop_whatsapp).slice(-11)))}</a><br>
-      <a href="${esc(s.shop_instagram)}" target="_blank" rel="noopener">Instagram @barbeariadocharleyy</a></p></div>
-    <div><h3>Horários</h3><ul class="plain">${hl}</ul></div>
-    <div><h3>Informações</h3><ul class="plain"><li><a href="faq.html">Dúvidas frequentes</a></li><li><a href="privacidade.html">Política de Privacidade</a></li><li><a href="termos.html">Termos de Uso</a></li><li><a href="#" id="open-ck">Preferências de cookies</a></li></ul></div>
-    </div><p class="copy">© ${new Date().getFullYear()} ${esc(s.shop_name)}. Este site precisa de internet para funcionar.</p>`;
+  $('#app-footer').innerHTML = `<div class="footer-visual" aria-hidden="true"><span class="footer-orbit orbit-a"></span><span class="footer-orbit orbit-b"></span><span class="footer-core"></span></div>
+    <div class="wrap footer-inner">
+      <div class="footer-main">
+        <div class="footer-brand-block"><a class="footer-brand" href="index.html"><img src="img/emblema.png" alt="" width="54" height="54"><span>BARBEARIA<br><b>DO CHARLEY</b></span></a>
+          <p>Seu estilo. Seu momento.<br><span>Precisão no corte, cuidado em cada detalhe.</span></p>
+          <div class="footer-social"><a href="${waLink(s.shop_whatsapp)}" target="_blank" rel="noopener" aria-label="WhatsApp">WA</a><a href="${esc(s.shop_instagram)}" target="_blank" rel="noopener" aria-label="Instagram">IG</a></div>
+        </div>
+        <div class="footer-column"><span class="footer-kicker">ENCONTRE A GENTE</span><h3>Visite a barbearia</h3><p>${esc(s.shop_address)}</p><a class="footer-link" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.shop_address)}" target="_blank" rel="noopener">Como chegar <span>↗</span></a></div>
+        <div class="footer-column"><span class="footer-kicker">PLANEJE SUA VISITA</span><h3>Horários</h3><ul class="plain">${hl}</ul><a class="footer-link" href="agendar.html">Escolher horário <span>→</span></a></div>
+        <div class="footer-column"><span class="footer-kicker">TUDO EM UM LUGAR</span><h3>Links úteis</h3><ul class="plain"><li><a href="servicos.html">Serviços e preços</a></li><li><a href="faq.html">Dúvidas frequentes</a></li><li><a href="privacidade.html">Privacidade</a></li><li><a href="termos.html">Termos de uso</a></li><li><a href="#" id="open-ck">Preferências de cookies</a></li></ul></div>
+      </div>
+      <div class="footer-cta"><div><span class="footer-kicker">SEU PRÓXIMO CORTE COMEÇA AQUI</span><strong>Pronto para renovar o visual?</strong></div><a class="btn" href="agendar.html">Agendar horário <span aria-hidden="true">↗</span></a></div>
+      <div class="footer-bottom"><span>© ${new Date().getFullYear()} ${esc(s.shop_name)}. Todos os direitos reservados.</span><span>Feito para valorizar seu estilo.</span></div>
+    </div>`;
   $('#open-ck').onclick = (e) => { e.preventDefault(); openConsent(true); };
+  const footer = $('#app-footer');
+  if ('IntersectionObserver' in window) {
+    const footerObserver = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) { footer.classList.add('is-visible'); footerObserver.disconnect(); }
+    }), { threshold: 0.08 });
+    footerObserver.observe(footer);
+  } else footer.classList.add('is-visible');
+  const footerVisual = $('.footer-visual', footer);
+  if (footerVisual && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    footer.addEventListener('pointermove', (event) => {
+      const rect = footer.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width - .5;
+      const y = (event.clientY - rect.top) / rect.height - .5;
+      footerVisual.style.setProperty('--mx', (x * 16) + 'px');
+      footerVisual.style.setProperty('--my', (y * 12) + 'px');
+    });
+    footer.addEventListener('pointerleave', () => { footerVisual.style.setProperty('--mx','0px'); footerVisual.style.setProperty('--my','0px'); });
+  }
 
   const w = document.createElement('a');
   w.className = 'wa-float'; w.target = '_blank'; w.rel = 'noopener'; w.setAttribute('aria-label', 'Chamar no WhatsApp');
