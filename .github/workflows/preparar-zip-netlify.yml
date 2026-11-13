@@ -1,0 +1,27 @@
+name: Preparar ZIP para Netlify
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar versão atual do projeto
+        uses: actions/checkout@v4
+
+      - name: Gerar pacote de publicação
+        run: |
+          cd charley_build
+          zip -r ../barbearia-netlify-atualizado.zip .             -x "*.sql"             -x "LEIA-ME*"             -x "RELATORIO-AUDITORIA-COMPLETA.md"             -x "CHANGELOG-*.txt"
+
+      - name: Disponibilizar ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: barbearia-netlify-atualizado
+          path: barbearia-netlify-atualizado.zip
+          if-no-files-found: error
+          retention-days: 7
