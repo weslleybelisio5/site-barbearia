@@ -93,7 +93,7 @@ export const api = {
       'sales','vendas','products','produtos'];
     const tables = await Promise.all(names.map(async (name) => {
       try {
-        const rows = await api.select(name, 'select=id&limit=1');
+        const rows = await api.select(name, 'select=*&limit=1');
         return { name, status: 'ok', hasRows: Array.isArray(rows) && rows.length > 0 };
       } catch (error) {
         return { name, status: 'error', httpStatus: error.status || null, code: error.code || null,
