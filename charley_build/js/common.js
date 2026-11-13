@@ -224,3 +224,33 @@ function mountHelpAssistant() {
   $('.assistant-close', root).addEventListener('click', close);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 }
+
+
+// Sistema de microinterações global: observa conteúdo dinâmico do site e do painel.
+function installCharleyExperience(){
+  if(typeof document==='undefined'||document.documentElement.dataset.charleyExperience==='on')return;
+  document.documentElement.dataset.charleyExperience='on';
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const selector='.card,.stat,.metric-chart,.help-card,.product-card,.tutorial-visual,.summary,.notice,.ok-box,.ap,.week .col,.cal .d';
+  const reveal=(scope=document)=>{
+    const nodes=scope.querySelectorAll?.('main .block .wrap, .adm-wrap > .row, .adm-wrap > .stats, .adm-wrap > .card, .metric-chart, .adm-wrap .grid')||[];
+    if(reduced||!('IntersectionObserver'in window)){nodes.forEach(n=>n.classList.add('is-inview'));return}
+    nodes.forEach(n=>{if(n.dataset.motionObserved)return;n.dataset.motionObserved='1';observer.observe(n)});
+  };
+  const observer='IntersectionObserver'in window?new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-inview');observer.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -24px 0px'}):null;
+  reveal();
+  if('MutationObserver'in window){new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===1){reveal(n);if(n.matches?.(selector))n.classList.add('motion-ready')}}))).observe(document.body,{childList:true,subtree:true})}
+  if(!reduced&&window.matchMedia('(hover:hover) and (pointer:fine)').matches){
+    let active=null;
+    document.addEventListener('pointermove',e=>{
+      const card=e.target.closest(selector);
+      if(active&&active!==card)active.style.transform='';
+      active=card;
+      if(!card||card.closest('dialog')||card.classList.contains('ap'))return;
+      const rect=card.getBoundingClientRect(),x=(e.clientX-rect.left)/rect.width-.5,y=(e.clientY-rect.top)/rect.height-.5;
+      card.style.transform='perspective(900px) rotateX('+(-y*2.4)+'deg) rotateY('+(x*2.8)+'deg) translateY(-2px)';
+    },{passive:true});
+    document.addEventListener('pointerout',e=>{const card=e.target.closest(selector);if(card&&!card.contains(e.relatedTarget)){card.style.transform='';if(active===card)active=null}},{passive:true});
+  }
+}
+if(typeof document!=='undefined')installCharleyExperience();
