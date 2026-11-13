@@ -19,16 +19,33 @@ function friendly(msg, status) {
   return m || 'Não foi possível concluir. Tente novamente.';
 }
 
+let refreshPromise = null;
 async function refreshIfNeeded() {
-  const s = loadSession();
-  if (!s) return null;
-  if (s.expires_at && s.expires_at - 60 > Math.floor(Date.now() / 1000)) return s;
-  try {
-    const r = await raw('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: s.refresh_token }, anon: true });
-    const ns = toSession(r);
-    saveSession(ns);
-    return ns;
-  } catch { saveSession(null); return null; }
+  const initial = loadSession();
+  if (!initial) return null;
+  if (initial.expires_at && initial.expires_at - 60 > Math.floor(Date.now() / 1000)) return initial;
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const current = loadSession();
+    if (!current) return null;
+    if (current.expires_at && current.expires_at - 60 > Math.floor(Date.now() / 1000)) return current;
+    try {
+      const r = await raw('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: current.refresh_token }, anon: true });
+      const ns = toSession(r);
+      saveSession(ns);
+      return ns;
+    } catch (error) {
+      // A falha de rede não deve apagar uma sessão válida. Só removemos tokens rejeitados.
+      const latest = loadSession();
+      if ((error.status === 400 || error.status === 401) && latest && latest.refresh_token === current.refresh_token) {
+        saveSession(null);
+        return null;
+      }
+      throw error;
+    }
+  })();
+  try { return await refreshPromise; }
+  finally { refreshPromise = null; }
 }
 
 function toSession(r) {
