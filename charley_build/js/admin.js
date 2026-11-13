@@ -91,6 +91,16 @@ async function viewOverview() {
   const revenue = payments.reduce((n, x) => n + Number(x.amount || 0), 0);
   const expenseTotal = expenses.reduce((n, x) => n + Number(x.amount || 0), 0);
   const completed = monthAppointments.filter(x => x.status === 'completed');
+  const openAppointments = monthAppointments.filter(x => ['pending', 'confirmed'].includes(x.status));
+  const cancelledAppointments = monthAppointments.filter(x => ['cancelled', 'no_show'].includes(x.status));
+  // Valor de reservas não canceladas: concluídas pelo total final; futuras/abertas pelo valor estimado.
+  const bookedValue = monthAppointments
+    .filter(x => !['cancelled', 'no_show'].includes(x.status))
+    .reduce((n, x) => n + Number(x.final_total ?? x.estimated_total ?? 0), 0);
+  const completedValue = completed.reduce((n, x) => n + Number(x.final_total ?? x.estimated_total ?? 0), 0);
+  const openExpected = openAppointments.reduce((n, x) => n + Number(x.estimated_total ?? 0), 0);
+  const servicePayments = payments.filter(x => (x.kind || 'service') === 'service')
+    .reduce((n, x) => n + Number(x.amount || 0), 0);
   const upcomingList = upcoming.filter(x => ['pending', 'confirmed'].includes(x.status)).slice(0, 6);
   const lastSeven = Array.from({length:7},(_,i)=>addDays(today,-6+i));
   const trend = lastSeven.map(day=>({label:day.slice(8,10)+'/'+day.slice(5,7),total:payments.filter(p=>ymdOf(p.paid_at)===day).reduce((n,p)=>n+Number(p.amount||0),0)}));
@@ -105,7 +115,27 @@ async function viewOverview() {
         return {label,total:paid+manual};
       }) : [];
   target.innerHTML = `<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><div><h2>Visão geral</h2><p class="muted">Resumo de ${fmtDate(first + 'T12:00:00')} até ${fmtDate(today + 'T12:00:00')}</p></div><div class="row"><button class="btn small ghost" id="refresh-overview">Atualizar painel</button><button class="btn" id="new-from-home">+ Novo agendamento</button></div></div>
-    <div class="stats"><div class="stat">Faturamento recebido<b>${brl(revenue)}</b></div><div class="stat">Despesas pagas<b>${brl(expenseTotal)}</b></div><div class="stat">Resultado<b>${brl(revenue-expenseTotal)}</b></div><div class="stat">Ticket médio concluído<b>${brl(avgTicket)}</b></div><div class="stat">Atendimentos concluídos<b>${completed.length}</b></div><div class="stat">Novos clientes<b>${customers.length}</b></div></div>
+    <div class="stats">
+      <div class="stat">Total recebido (todos os pagamentos)<b>${brl(revenue)}</b></div>
+      <div class="stat">Recebido em serviços<b>${brl(servicePayments)}</b></div>
+      <div class="stat">Valor dos agendamentos válidos<b>${brl(bookedValue)}</b></div>
+      <div class="stat">A receber (abertos, estimado)<b>${brl(openExpected)}</b></div>
+      <div class="stat">Despesas pagas<b>${brl(expenseTotal)}</b></div>
+      <div class="stat">Resultado de caixa<b>${brl(revenue-expenseTotal)}</b></div>
+      <div class="stat">Ticket médio concluído<b>${brl(avgTicket)}</b></div>
+      <div class="stat">Novos clientes<b>${customers.length}</b></div>
+    </div>
+    <section class="card" style="margin-top:12px">
+      <h3>Movimento de agendamentos no mês</h3>
+      <div class="stats">
+        <div class="stat">Total de reservas<b>${monthAppointments.length}</b></div>
+        <div class="stat">Concluídos<b>${completed.length}</b></div>
+        <div class="stat">Aguardando / confirmados<b>${openAppointments.length}</b></div>
+        <div class="stat">Cancelados / faltas<b>${cancelledAppointments.length}</b></div>
+        <div class="stat">Valor dos concluídos<b>${brl(completedValue)}</b></div>
+      </div>
+      <p class="muted mini">O valor dos agendamentos não é dinheiro recebido. O caixa considera somente pagamentos registrados.</p>
+    </section>
     <section class="metric-chart"><div class="row" style="justify-content:space-between;align-items:center"><div><h3>Faturamento nos últimos 7 dias</h3><p class="muted mini">Pagamentos recebidos por dia</p></div><b>${brl(trend.reduce((n,x)=>n+x.total,0))}</b></div><div class="chart-bars">${trend.map(x=>'<div class="chart-col"><b>'+brl(x.total)+'</b><div class="chart-track"><div class="chart-fill" style="height:'+Math.max(3,x.total/trendMax*100)+'%"></div></div><small>'+x.label+'</small></div>').join('')}</div></section>
     <div class="muted mini">Atendimentos no período: ${monthAppointments.length} · Pagamentos registrados: ${payments.length} · Despesas pagas: ${expenses.length}</div>
     <div class="grid" style="margin-top:16px"><section class="card"><div class="row" style="justify-content:space-between"><h3>Caixa</h3><span class="badge">${cash?.status === 'open' ? 'Aberto' : 'Fechado'}</span></div>${cash?.status === 'open' ? `<p>Saldo inicial: <b>${brl(cash.opening_amount || 0)}</b></p><p>Dinheiro esperado: <b>${brl(cash.expected_cash || 0)}</b></p><p><b>Resumo por forma</b></p>${cashMethods.map(x => `<p>${x.label}: <b>${brl(x.total)}</b></p>`).join('')}<p class="muted">Os outros meios não alteram o dinheiro físico.</p>` : '<p class="muted">Não há caixa aberto no momento.</p>'}<button class="btn small ghost" id="open-cash">Abrir módulo Caixa</button></section>
