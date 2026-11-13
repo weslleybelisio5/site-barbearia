@@ -5,7 +5,7 @@ import { api } from './api.js';
 const money = (v) => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const q = (v) => encodeURIComponent(v ?? '');
 const wrap = (title, actions, content) => `<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>${title}</h2><div class="row">${actions||''}</div></div>${content}`;
-function dlg(html){const d=document.createElement('dialog');d.className='dlg big';d.innerHTML=html;document.body.append(d);d.addEventListener('close',()=>d.remove());d.showModal();$$('[data-close]',d).forEach(b=>b.onclick=e=>{e.preventDefault();d.close()});return d;}
+function dlg(html){const d=document.createElement('dialog');d.className='dlg big';d.innerHTML=`<button type="button" class="dlg-x" aria-label="Fechar janela" title="Fechar">×</button>${html}`;document.body.append(d);d.addEventListener('close',()=>d.remove());d.querySelector('.dlg-x').addEventListener('click',()=>d.close());d.showModal();$$('[data-close]',d).forEach(b=>b.onclick=e=>{e.preventDefault();d.close()});return d;}
 const guard=async fn=>{try{return await fn()}catch(e){toast(e.message||'Erro ao executar.','error')}};
 const field=(id,label,type='text',value='',extra='')=>`<label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value??'')}" ${extra}>`;
 const saveForm=(d,id,fn)=>{const f=$('#'+id,d);f.onsubmit=async e=>{e.preventDefault();const b=$('button[type=submit]',f);if(b)b.disabled=true;try{await fn();d.close()}catch(x){$('#err',d).textContent=x.message;b&&(b.disabled=false)}}};
